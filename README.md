@@ -18,7 +18,7 @@ This repository contains the code and sample files used in my bachelor's thesis 
 - **`hatefinetune.py`**  
   Built upon the training phase, this script was used for iterative fine-tuning of the models to improve performance.
 
-- **`hateclassify.py`**  
+- **`hateclassify.py`**
   Applies the final fine-tuned model to the full dataset to classify Reddit posts according to the binary hate speech labels.
 
 ### Jupyter Notebooks
