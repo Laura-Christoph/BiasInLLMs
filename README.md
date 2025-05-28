@@ -29,6 +29,9 @@ This repository contains the code and sample files used in my bachelor's thesis 
 - **`BiasAnalysis.ipynb`**  
   Focused on post-classification analysis. This notebook examines the results of LLM inference and explores potential cultural and linguistic biases in model predictions.
 
+- **LLMsCategorization.ipynb`**
+  Used to categorize the hate speech sample as well as to create a topic model and concept map
+
 ### Folders
 
 - **`LLMs_Stance and Category/`**  
