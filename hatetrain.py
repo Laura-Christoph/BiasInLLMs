@@ -1,5 +1,5 @@
 import os
-# Disable the MPS memory cap (use with caution)
+# Disabling the MPS memory cap (use with caution)
 os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
 
 import pandas as pd
@@ -37,7 +37,7 @@ class TextClassificationDataset(Dataset):
             text,
             truncation=True,
             max_length=self.max_length,
-            padding=False,  # rely on the data collator for padding
+            padding=False,  
             return_tensors="pt"
         )
         return {
@@ -77,7 +77,7 @@ n_neg_eval = 600
 pos_df = df[df["label"] == 1].copy()
 neg_df = df[df["label"] == 0].copy()
 
-# Select the first n examples (without additional randomization) for evaluation
+# Selecting the first n examples for evaluation
 pos_eval = pos_df.iloc[:n_pos_eval]
 neg_eval = neg_df.iloc[:n_neg_eval]
 eval_df = pd.concat([pos_eval, neg_eval], ignore_index=True)
@@ -87,21 +87,21 @@ pos_train = pos_df.iloc[n_pos_eval:]
 neg_train = neg_df.iloc[n_neg_eval:]
 train_df = pd.concat([pos_train, neg_train], ignore_index=True)
 
-# Shuffle final splits
+# Shuffling final splits
 train_df = train_df.sample(frac=1, random_state=42).reset_index(drop=True)
 eval_df = eval_df.reset_index(drop=True)
 
-# Extract texts and labels
+# Extracting texts and labels
 train_texts = train_df["text"].tolist()
 train_labels = train_df["label"].tolist()
 eval_texts = eval_df["text"].tolist()
 eval_labels = eval_df["label"].tolist()
 
 # -------------------------------------
-# 3. PREP DATASETS
+# 3. PREPARE DATASETS
 # -------------------------------------
-# Load tokenizer from your pretrained model directory.
-model_dir = "/Users/laurachristoph/Desktop/best_distilbert_model"
+# Loading tokenizer from my pretrained model directory.
+model_dir = "*/best_distilbert_model"
 tokenizer = DistilBertTokenizer.from_pretrained(model_dir)
 
 train_dataset = TextClassificationDataset(train_texts, train_labels, tokenizer)
@@ -112,7 +112,7 @@ eval_dataset = TextClassificationDataset(eval_texts, eval_labels, tokenizer)
 # -------------------------------------
 model = DistilBertForSequenceClassification.from_pretrained(model_dir, num_labels=2)
 
-# Set the device to MPS (M1) if available, otherwise CPU.
+# Setting the device to MPS (M1) if available, otherwise CPU.
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 model.to(device)
 
@@ -132,7 +132,7 @@ training_args = TrainingArguments(
     logging_dir="./distilbert-logs",
 )
 
-# Define model_init for hyperparameter search
+# Defining model_init for hyperparameter search
 def model_init():
     new_model = DistilBertForSequenceClassification.from_pretrained(model_dir, num_labels=2)
     new_model.to(device)
@@ -147,14 +147,14 @@ trainer = CustomTrainer(
     data_collator=data_collator,
 )
 
-# Define hyperparameter search space with Optuna
+# Defining hyperparameter search space 
 def hp_space(trial):
     return {
         "learning_rate": trial.suggest_float("learning_rate", 1e-5, 5e-5, log=True),
         "num_train_epochs": trial.suggest_int("num_train_epochs", 2, 10)
     }
 
-# Run hyperparameter search (e.g., 10 trials)
+# Running hyperparameter search 
 best_run = trainer.hyperparameter_search(
     hp_space=hp_space,
     direction="minimize",
@@ -163,26 +163,26 @@ best_run = trainer.hyperparameter_search(
 
 print("Best hyperparameters found:", best_run.hyperparameters)
 
-# Update training arguments with the best hyperparameters
+# Updating training arguments with the best hyperparameters
 trainer.args.learning_rate = best_run.hyperparameters["learning_rate"]
 trainer.args.num_train_epochs = best_run.hyperparameters["num_train_epochs"]
 
 # -------------------------------------
-# 6. TRAIN THE MODEL
+# 6. TRAINING THE MODEL
 # -------------------------------------
 trainer.train()
 
 # -------------------------------------
-# 7. SAVE THE FINAL MODEL
+# 7. SAVING THE FINAL MODEL
 # -------------------------------------
-# Set a single, consistent save directory
-save_directory = "/Users/laurachristoph/Desktop/best_distilbert_model_6"
+# Setting a single, consistent save directory
+save_directory = "*/best_distilbert_model_6"
 trainer.save_model(save_directory)
 tokenizer.save_pretrained(save_directory)
-print(f"✅ Training complete! Model saved to '{save_directory}'.")
+print(f"Training complete! Model saved to '{save_directory}'.")
 
 # -------------------------------------
-# EVALUATE MODEL
+# EVALUATING MODEL
 # -------------------------------------
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, confusion_matrix, ConfusionMatrixDisplay
 
@@ -194,19 +194,19 @@ pred_labels = pred_probs.argmax(axis=1)
 # Option: Extract true labels from dataset
 true_labels = [example["labels"].item() for example in eval_dataset]
 
-# Compute basic metrics
+# Computing basic metrics
 acc = accuracy_score(true_labels, pred_labels)
 prec = precision_score(true_labels, pred_labels, average='binary')
 rec = recall_score(true_labels, pred_labels, average='binary')
 f1 = f1_score(true_labels, pred_labels, average='binary')
 
-print("\n📊 Evaluation Metrics:")
+print("\nEvaluation Metrics:")
 print(f"Accuracy:  {acc:.4f}")
 print(f"Precision: {prec:.4f}")
 print(f"Recall:    {rec:.4f}")
 print(f"F1 Score:  {f1:.4f}")
 
-print("\n📋 Classification Report:")
+print("\nClassification Report:")
 print(classification_report(true_labels, pred_labels, target_names=["Not Hate", "Hate"], digits=4))
 
 cm = confusion_matrix(true_labels, pred_labels)

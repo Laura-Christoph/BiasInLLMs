@@ -3,10 +3,10 @@ from transformers import DistilBertTokenizer, DistilBertForSequenceClassificatio
 from tqdm import tqdm
 
 # ----------------------------
-# 1) Load your DistilBERT model
+# 1) Loading my DistilBERT model
 # ----------------------------
-model_path = "/Users/laurachristoph/Desktop/best_distilbert_model_7"
-#model_path = "/Users/laurachristoph/Desktop/best_distilbert_model_retrained"
+model_path = "*/best_distilbert_model_7"
+#model_path = "*/best_distilbert_model_retrained"
 tokenizer = DistilBertTokenizer.from_pretrained(model_path)
 model = DistilBertForSequenceClassification.from_pretrained(model_path)
 
@@ -36,16 +36,15 @@ def classify_texts(texts, batch_size=16):
     return predicted_labels
 
 # ----------------------------
-# 3) Process the TSV file in chunks without pandas
+# 3) Processing the TSV file in chunks without pandas
 # ----------------------------
-input_file = "/Users/laurachristoph/Desktop/Bachelorarbeit/chunk3_preannotated_V2.txt"
-output_file = "/Users/laurachristoph/Desktop/Bachelorarbeit/chunk3_annotated_V2.tsv"
+input_file = "*/chunk3_preannotated_V2.txt"
+output_file = "*/chunk3_annotated_V2.tsv"
 chunk_size = 15000  # number of lines to process per chunk
 
 # Open input and output files
 with open(input_file, "r", encoding="utf-8", errors="replace") as infile, open(output_file, "w", encoding="utf-16", errors="replace") as outfile:
-    # We'll assume the file has no header; if it has one, handle it separately.
-    # For each line, we only care about the first column (text).
+    # For each line, I only care about the first column (text).
     current_chunk = []
     total_lines = 0
 
@@ -54,23 +53,23 @@ with open(input_file, "r", encoding="utf-8", errors="replace") as infile, open(o
         line = line.rstrip("\n")
         if not line:
             continue
-        # Extract the first column (assuming tab-separated)
+        # Extract the first column 
         #text = line.split("\t")[3]
         text = line # for classified docs
         current_chunk.append(text)
         total_lines += 1
 
-        # If we've collected a full chunk, classify and write results
+        # If I've collected a full chunk, it classifes and writes the results
         if len(current_chunk) >= chunk_size:
             labels = classify_texts(current_chunk)
             for text_val, label in zip(current_chunk, labels):
                 outfile.write(f"{text_val}\t{label}\n")
             current_chunk = []  # clear the chunk
 
-    # Process any remaining lines
+    # Processing any remaining lines
     if current_chunk:
         labels = classify_texts(current_chunk)
         for text_val, label in zip(current_chunk, labels):
             outfile.write(f"{text_val}\t{label}\n")
 
-print(f"✅ Done! Processed {total_lines} lines. Labeled data saved to '{output_file}'.")
+print(f"Done! Processed {total_lines} lines. Labeled data saved to '{output_file}'.")

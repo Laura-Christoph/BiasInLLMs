@@ -6,7 +6,7 @@ from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 from torch.utils.data import DataLoader
 import random
 
-# 1. Load data in chunks (chunking manually)
+# 1. Loading data in chunks 
 chunk_size = 5000
 
 def read_in_chunks(path):
@@ -33,16 +33,16 @@ def read_in_chunks(path):
         if batch:
             yield batch
 
-# 2. Load tokenizer and model
-model_path = "/Users/laurachristoph/Desktop/best_distilbert_model_retrained"
+# 2. Loading tokenizer and model
+model_path = "*/best_distilbert_model_retrained"
 tokenizer = DistilBertTokenizerFast.from_pretrained(model_path)
 model = DistilBertForSequenceClassification.from_pretrained(model_path, num_labels=2)
 
-# 3. Use M1 GPU
+# 3. Using M1 GPU
 device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
 model.to(device)
 
-# 4. Define metrics
+# 4. Defining metrics
 def compute_metrics(eval_pred):
     logits, labels = eval_pred
     predictions = logits.argmax(axis=-1)
@@ -55,20 +55,20 @@ def compute_metrics(eval_pred):
         'recall': recall
     }
 
-# 5. Prepare a small part of the data for hyperparameter search
+# 5. Preparing a small part of the data for hyperparameter search
 print("Loading a small subset for hyperparameter tuning...")
-data_iter = read_in_chunks("/Users/laurachristoph/Desktop/Bachelorarbeit/big_reli_hate_dataset.txt")
+data_iter = read_in_chunks("*/big_reli_hate_dataset.txt")
 small_batch = next(data_iter)
 df_small = pd.DataFrame(small_batch)
 dataset_small = Dataset.from_pandas(df_small)
 
-# 6. Tokenize function
+# 6. Tokenizing function
 def tokenize_function(examples):
     return tokenizer(examples['text'], padding="max_length", truncation=True)
 
 dataset_small = dataset_small.map(tokenize_function, batched=True)
 
-# 7. Define training arguments for search
+# 7. Defining training arguments for search
 training_args = TrainingArguments(
     output_dir="/tmp/test_trainer",
     evaluation_strategy="epoch",
@@ -94,14 +94,14 @@ trainer = Trainer(
     compute_metrics=compute_metrics,
 )
 
-# 9. Search for best learning rate (simple version)
+# 9. Searching for best learning rate (simple version)
 print("\n--- Starting trial training to find best learning rate ---\n")
 trainer.train()
 
-# 10. Now train full model chunk-by-chunk
+# 10. Now training full model chunk-by-chunk
 all_batches = []
 print("\n--- Starting full training ---\n")
-for batch_idx, batch in enumerate(read_in_chunks("/Users/laurachristoph/Desktop/Bachelorarbeit/big_reli_hate_dataset.txt")):
+for batch_idx, batch in enumerate(read_in_chunks("*/big_reli_hate_dataset.txt")):
     print(f"Processing batch {batch_idx+1}")
     df = pd.DataFrame(batch)
     dataset = Dataset.from_pandas(df)
@@ -117,8 +117,8 @@ print("Evaluating on last seen batch:")
 metrics = trainer.evaluate()
 print(metrics)
 
-# Save final model
-final_save_path = "/Users/laurachristoph/Desktop/best_distilbert_model_7"
+# Saving final model
+final_save_path = "*/best_distilbert_model_7"
 model.save_pretrained(final_save_path)
 tokenizer.save_pretrained(final_save_path)
 
